@@ -48,7 +48,8 @@
                 "${workspaceRoot}",
                 "${workspaceRoot}/libopencm3/include",
                 "C:/arm/arm-none-eabi/arm-none-eabi/include",
-                "C:/arm/arm-none-eabi/lib/gcc/arm-none-eabi/7.2.1/include"
+                "C:/arm/arm-none-eabi/lib/gcc/arm-none-eabi/7.2.1/include",
+                "${workspaceRoot}/inc"
             ],
             "defines": [
                 "_DEBUG",
