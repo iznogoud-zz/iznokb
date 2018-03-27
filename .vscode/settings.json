@@ -1,8 +1,2 @@
 {
-    "files.associations": {
-        "spi.h": "c",
-        "usbd.h": "c",
-        "scb.h": "c",
-        "usb_hid_report_descriptors.h": "c"
-    }
 }

@@ -7,7 +7,7 @@
         {
             "cwd": "${workspaceRoot}",
             "executable": "./src/iznokb.elf",
-            "name": "iznokb",
+            "name": "openocd debug",
             "request": "launch",
             "type": "cortex-debug",
             "servertype": "openocd",

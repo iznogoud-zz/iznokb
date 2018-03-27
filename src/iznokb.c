@@ -165,7 +165,7 @@ static void hid_set_config(usbd_device *dev, uint16_t wValue)
 	systick_set_reload(999999);
 	systick_interrupt_enable();
 	systick_counter_enable();
-}
+}	
 
 int main(void)
 {
