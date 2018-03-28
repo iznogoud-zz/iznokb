@@ -1,2 +1,7 @@
 {
+    "files.associations": {
+        "scb.h": "c",
+        "usb.h": "c",
+        "systick.h": "c"
+    }
 }
