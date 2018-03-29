@@ -206,7 +206,7 @@ static void usbuart_usb_out_cb(usbd_device *dev, uint8_t ep)
 
 	int j = 0;
 	for(int i = 0; i < len; i++) {
-		gpio_toggle(GPIOC, GPIO13);
+		// gpio_toggle(GPIOC, GPIO13);
 
 		// Echo back what was typed
 		// Enter sends a CR, but an LF is needed to advance to next line
@@ -238,9 +238,9 @@ static void usbuart_usb_out_cb(usbd_device *dev, uint8_t ep)
 	send_chunked_blocking(reply_buf, j, dev, CDCACM_UART_ENDPOINT, CDCACM_PACKET_SIZE);
 }
 
-void uart_print(char *msg, usbd_device *dev)
+void uart_print(char *msg, uint8_t len, usbd_device *dev)
 {
-	send_chunked_blocking(msg, strlen(msg), dev, CDCACM_UART_ENDPOINT, CDCACM_PACKET_SIZE);
+	send_chunked_blocking(msg, len, dev, CDCACM_UART_ENDPOINT, CDCACM_PACKET_SIZE);
 }
 
 static void usbuart_usb_in_cb(usbd_device *dev, uint8_t ep)
