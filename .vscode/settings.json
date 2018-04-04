@@ -2,6 +2,11 @@
     "files.associations": {
         "scb.h": "c",
         "usb.h": "c",
-        "systick.h": "c"
+        "systick.h": "c",
+        "rcc.h": "c",
+        "usbd.h": "c",
+        "cdc.h": "c",
+        "usb_serial.h": "c",
+        "cdcacm.h": "c"
     }
 }

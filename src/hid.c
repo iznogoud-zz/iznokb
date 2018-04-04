@@ -29,6 +29,7 @@
 #define INCLUDE_PACKET_DESCRIPTOR
 #include "hid.h"
 
+#define USB_HID_INTERFACE 0
 
 static const struct {
 	struct usb_hid_descriptor hid_descriptor;
@@ -64,7 +65,7 @@ const struct usb_endpoint_descriptor hid_endpoint = {
 struct usb_interface_descriptor hid_iface = {
 	.bLength = USB_DT_INTERFACE_SIZE,
 	.bDescriptorType = USB_DT_INTERFACE,
-	.bInterfaceNumber = 0,
+	.bInterfaceNumber = USB_HID_INTERFACE,
 	.bAlternateSetting = 0,
 	.bNumEndpoints = 1,
 	.bInterfaceClass = USB_CLASS_HID,
@@ -78,7 +79,7 @@ struct usb_interface_descriptor hid_iface = {
 	.extralen = sizeof(hid_function),
 };
 
-static enum usbd_request_return_codes hid_control_request(usbd_device *dev, struct usb_setup_data *req, uint8_t **buf, uint16_t *len,
+static enum usbd_request_return_codes  hid_control_request(usbd_device *dev, struct usb_setup_data *req, uint8_t **buf, uint16_t *len,
 			void (**complete)(usbd_device *, struct usb_setup_data *))
 {
 	(void)complete;
