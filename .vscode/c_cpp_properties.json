@@ -54,7 +54,8 @@
             "defines": [
                 "_DEBUG",
                 "UNICODE",
-                "_UNICODE"
+                "_UNICODE",
+                "STM32F1"
             ],
             "intelliSenseMode": "msvc-x64",
             "browse": {
