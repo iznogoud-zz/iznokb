@@ -197,50 +197,29 @@ static void usbuart_usb_out_cb(usbd_device *dev, uint8_t ep)
 	char buf[CDCACM_PACKET_SIZE];
 	char reply_buf[256];
 
-	// static char typing_buf[2048] = {0};
-	// static int typing_index = 0;
-
 	int len = usbd_ep_read_packet(dev, CDCACM_UART_ENDPOINT,
 					buf, CDCACM_PACKET_SIZE);
 
 
 	int j = 0;
+
+	reply_buf[j++] = '<';
 	for(int i = 0; i < len; i++) {
-		// gpio_toggle(GPIOC, GPIO13);
+		gpio_toggle(GPIOC, GPIO13);
 
 		// Echo back what was typed
 		// Enter sends a CR, but an LF is needed to advance to next line
-		if (buf[i] == '\r') reply_buf[j++] = '\n';
-		reply_buf[j++] = buf[i];
-
-		// typing_buf[typing_index++] = buf[i];
+		if (!(buf[i] == '\r' || buf[i] == '\n'))
+			reply_buf[j++] = buf[i];
 
 		if (buf[i] == '\r' || buf[i] == '\n') {
-			char *response = "";//process_serial_command(typing_buf, typing_index);
-			// typing_index = 0;
-
-			for (size_t k = 0; k < strlen(response); ++k) {
-				reply_buf[j++] = response[k];
-			}
-
-			// prompt
-			reply_buf[j++] = '\r';
-			reply_buf[j++] = '\n';
-			reply_buf[j++] = 'd';
-			reply_buf[j++] = 'u';
-			reply_buf[j++] = 'c';
-			reply_buf[j++] = 'k';
+			
 			reply_buf[j++] = '>';
-			reply_buf[j++] = ' ';
+			reply_buf[j++] = '\n';
 		}
 	}
 
 	send_chunked_blocking(reply_buf, j, dev, CDCACM_UART_ENDPOINT, CDCACM_PACKET_SIZE);
-}
-
-void uart_print(char *msg, uint8_t len, usbd_device *dev)
-{
-	send_chunked_blocking(msg, len, dev, CDCACM_UART_ENDPOINT, CDCACM_PACKET_SIZE);
 }
 
 static void usbuart_usb_in_cb(usbd_device *dev, uint8_t ep)

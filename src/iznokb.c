@@ -19,14 +19,18 @@
 
 #include <stdlib.h>
 #include <libopencm3/stm32/rcc.h>
+#include <libopencm3/cm3/scb.h>
 #include <libopencm3/stm32/gpio.h>
 #include <libopencm3/usb/usbd.h>
 #include <libopencm3/usb/cdc.h>
 #include <libopencm3/cm3/nvic.h>
 #include <libopencm3/cm3/systick.h>
 
-#include "usb_serial.h"
+//#include "usb_serial.h"
+#include "cdcacm.h"
 #include "hid.h"
+
+bool usb_ready = false;
 
 usbd_device *usbd_dev;
 
@@ -48,8 +52,8 @@ static const struct usb_device_descriptor dev_descr = {
 	.bDeviceSubClass = 0,
 	.bDeviceProtocol = 0,
 	.bMaxPacketSize0 = 64,
-	.idVendor = 0x0483,
-	.idProduct = 0x5740,
+	.idVendor = 0x05ac,
+	.idProduct = 0x2227,
 	.bcdDevice = 0x0200,
 	.iManufacturer = 1,
 	.iProduct = 2,
@@ -61,15 +65,16 @@ static const struct usb_interface ifaces[] = {
 {
 	.num_altsetting = 1,
 	.altsetting = &hid_iface,
-}/*,
-{
-	.num_altsetting = 1,
-	.altsetting = comm_iface,
 },
 {
 	.num_altsetting = 1,
-	.altsetting = data_iface,
-}*/
+	.iface_assoc = &uart_assoc,
+	.altsetting = uart_comm_iface,
+},
+{
+	.num_altsetting = 1,
+	.altsetting = uart_data_iface,
+}
 };
 
 static const struct usb_config_descriptor config = {
@@ -87,7 +92,7 @@ static const struct usb_config_descriptor config = {
 
 static void usb_set_config(usbd_device *dev, uint16_t wValue)
 {
-	// cdcacm_set_config(dev, wValue);
+	cdcacm_set_config(dev, wValue);
 
 	hid_set_config(dev, wValue);
 }
@@ -119,16 +124,18 @@ static void setup_gpio(void)
 }
 
 static int dir = 1;
-static bool jiggler = true;
-static bool odd = true;
+static bool jiggler = false;
+static unsigned int tick_counter = 0;
 void sys_tick_handler(void)
 {
-	gpio_toggle(GPIOC, GPIO13);
+	if(usb_ready && tick_counter % 100 == 0)
+		gpio_toggle(GPIOC, GPIO13);
 
-	static int x = 0;
+	tick_counter += 1;
 
-	if(odd)
+	if(usb_ready && jiggler)
 	{
+		static int x = 0;
 		if (jiggler) {
 				x += dir;
 				if (x > 2500)
@@ -144,23 +151,14 @@ void sys_tick_handler(void)
 		report_m[3] = 0; // 'A'
 		usbd_ep_write_packet(usbd_dev, 0x81, report_m, sizeof(report_m));
 
-	// 	odd = false;
-	// }else{
-
 		uint8_t report[9] = {0};
 		report[0] = 1; // keyboard
 		report[1] = 0; // no modifiers down
 		report[2] = 0;
 		report[3] = 0x04; // 'A'
 		usbd_ep_write_packet(usbd_dev, 0x81, report, sizeof(report));
-		odd = true;
 	}
-
-
-	
 }
-
-
 
 int main(void)
 {
@@ -168,14 +166,21 @@ int main(void)
 
 	setup_gpio();
 
-	usbd_dev = usbd_init(&st_usbfs_v1_usb_driver, &dev_descr, &config, usb_strings, 3, usbd_control_buffer, sizeof(usbd_control_buffer));
+	usbd_dev = usbd_init(&st_usbfs_v1_usb_driver, &dev_descr, &config, usb_strings, sizeof(usb_strings)/sizeof(char *),
+	 usbd_control_buffer, sizeof(usbd_control_buffer));
 	usbd_register_set_config_callback(usbd_dev, usb_set_config);
 
 	for (int i = 0; i < 0x800000; i++)
 		__asm__("nop");
 
+	usb_ready = true;
+
 	gpio_set(GPIOC, GPIO13);
 
+	
+
 	while (1)
+	{
 		usbd_poll(usbd_dev);
+	}
 }

@@ -7,6 +7,7 @@
         "usbd.h": "c",
         "cdc.h": "c",
         "usb_serial.h": "c",
-        "cdcacm.h": "c"
+        "cdcacm.h": "c",
+        "hid.h": "c"
     }
 }
