@@ -222,6 +222,13 @@ static void usbuart_usb_out_cb(usbd_device *dev, uint8_t ep)
 	send_chunked_blocking(reply_buf, j, dev, CDCACM_UART_ENDPOINT, CDCACM_PACKET_SIZE);
 }
 
+void usbuart_send_buf(usbd_device *dev, void *buf, unsigned int size)
+{
+
+	usbd_ep_write_packet(dev, CDCACM_UART_ENDPOINT, buf , size);
+	// send_chunked_blocking(buf, size, dev, CDCACM_UART_ENDPOINT, CDCACM_PACKET_SIZE);
+}
+
 static void usbuart_usb_in_cb(usbd_device *dev, uint8_t ep)
 {
 	(void) dev;

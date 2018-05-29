@@ -25,10 +25,12 @@
 #include <libopencm3/usb/cdc.h>
 #include <libopencm3/cm3/nvic.h>
 #include <libopencm3/cm3/systick.h>
+#include <string.h>
 
 //#include "usb_serial.h"
 #include "cdcacm.h"
 #include "hid.h"
+#include "iznokb.h"
 
 bool usb_ready = false;
 
@@ -40,6 +42,8 @@ static const char *usb_strings[] = {
 	"izno",
 	"izno uart",
 };
+
+
 
 /* Buffer to be used for control requests. */
 uint8_t usbd_control_buffer[128];
@@ -99,7 +103,9 @@ static void usb_set_config(usbd_device *dev, uint16_t wValue)
 
 static void setup_clock(void) {
 	rcc_clock_setup_in_hsi_out_48mhz();
+	rcc_periph_clock_enable(RCC_GPIOA);
 	rcc_periph_clock_enable(RCC_GPIOC);
+	rcc_periph_clock_enable(RCC_GPIOB);
 
 	systick_set_clocksource(STK_CSR_CLKSOURCE_AHB_DIV8);
 	/* SysTick interrupt every N clock pulses: set reload to N-1
@@ -121,11 +127,51 @@ static void setup_gpio(void)
 		      GPIO_CNF_OUTPUT_PUSHPULL, GPIO13);
 
 	gpio_clear(GPIOC, GPIO13);
+
+	gpio_set_mode(rows[0].port, GPIO_MODE_OUTPUT_2_MHZ, GPIO_CNF_OUTPUT_PUSHPULL, rows[0].pin); // row 1
+	gpio_set_mode(rows[1].port, GPIO_MODE_OUTPUT_2_MHZ, GPIO_CNF_OUTPUT_PUSHPULL, rows[1].pin); // row 1
+	gpio_set_mode(rows[2].port, GPIO_MODE_OUTPUT_2_MHZ, GPIO_CNF_OUTPUT_PUSHPULL, rows[2].pin); // row 2
+	gpio_set_mode(rows[3].port, GPIO_MODE_OUTPUT_2_MHZ, GPIO_CNF_OUTPUT_PUSHPULL, rows[3].pin); // row 3
+	gpio_set_mode(rows[4].port, GPIO_MODE_OUTPUT_2_MHZ, GPIO_CNF_OUTPUT_PUSHPULL, rows[4].pin);  // row 4
+	gpio_set_mode(rows[5].port, GPIO_MODE_OUTPUT_2_MHZ, GPIO_CNF_OUTPUT_PUSHPULL, rows[5].pin);  // row 5
+
+	gpio_set_mode(cols[0].port, GPIO_MODE_INPUT, GPIO_CNF_INPUT_PULL_UPDOWN, cols[0].pin); // col 0
+	gpio_set_mode(cols[1].port, GPIO_MODE_INPUT, GPIO_CNF_INPUT_PULL_UPDOWN, cols[1].pin); // col 1
+	gpio_set_mode(cols[2].port, GPIO_MODE_INPUT, GPIO_CNF_INPUT_PULL_UPDOWN, cols[2].pin);  // col 2
+	gpio_set_mode(cols[3].port, GPIO_MODE_INPUT, GPIO_CNF_INPUT_PULL_UPDOWN, cols[3].pin);  // col 3
+	gpio_set_mode(cols[4].port, GPIO_MODE_INPUT, GPIO_CNF_INPUT_PULL_UPDOWN, cols[4].pin);  // col 4
+	gpio_set_mode(cols[5].port, GPIO_MODE_INPUT, GPIO_CNF_INPUT_PULL_UPDOWN, cols[5].pin);  // col 5
+	gpio_set_mode(cols[6].port, GPIO_MODE_INPUT, GPIO_CNF_INPUT_PULL_UPDOWN, cols[6].pin);  // col 6
+	gpio_set_mode(cols[7].port, GPIO_MODE_INPUT, GPIO_CNF_INPUT_PULL_UPDOWN, cols[7].pin);  // col 7
+	gpio_set_mode(cols[8].port, GPIO_MODE_INPUT, GPIO_CNF_INPUT_PULL_UPDOWN, cols[8].pin);  // col 8
+	gpio_set_mode(cols[9].port, GPIO_MODE_INPUT, GPIO_CNF_INPUT_PULL_UPDOWN, cols[9].pin);  // col 9
+	gpio_set_mode(cols[10].port, GPIO_MODE_INPUT, GPIO_CNF_INPUT_PULL_UPDOWN, cols[10].pin);  // col 10
+	gpio_set_mode(cols[11].port, GPIO_MODE_INPUT, GPIO_CNF_INPUT_PULL_UPDOWN, cols[11].pin);  // col 11
+	gpio_set_mode(cols[12].port, GPIO_MODE_INPUT, GPIO_CNF_INPUT_PULL_UPDOWN, cols[12].pin); // col 12
+	gpio_set_mode(cols[13].port, GPIO_MODE_INPUT, GPIO_CNF_INPUT_PULL_UPDOWN, cols[13].pin); // col 13
+	gpio_set_mode(cols[14].port, GPIO_MODE_INPUT, GPIO_CNF_INPUT_PULL_UPDOWN, cols[14].pin);  // col 14
+	gpio_set_mode(cols[15].port, GPIO_MODE_INPUT, GPIO_CNF_INPUT_PULL_UPDOWN, cols[15].pin);  // col 15
+}
+
+static uint16_t check_cols(void)
+{
+	uint16_t columns = 0;
+
+	for(int i=0; i<NUM_COLS; i++)
+	{
+		columns |= (gpio_get(cols[i].port, cols[i].pin) << i);
+	}
+
+	return columns;
 }
 
 static int dir = 1;
-static bool jiggler = false;
+static bool jiggler = true;
 static unsigned int tick_counter = 0;
+
+static char uart_debug[128] = {0};
+static uint16_t column_val = 0;
+
 void sys_tick_handler(void)
 {
 	if(usb_ready && tick_counter % 100 == 0)
@@ -155,8 +201,27 @@ void sys_tick_handler(void)
 		report[0] = 1; // keyboard
 		report[1] = 0; // no modifiers down
 		report[2] = 0;
-		report[3] = 0x04; // 'A'
+		report[3] = 0x05; // 'A'
 		usbd_ep_write_packet(usbd_dev, 0x81, report, sizeof(report));
+	}
+
+	if(usb_ready && tick_counter % 100 == 0)
+	{
+		column_val = 0;
+		gpio_set(rows[0].port, rows[0].pin);
+
+		column_val = check_cols();
+
+		// memcpy(uart_debug, &column_val, sizeof(uint16_t));
+		uart_debug[0] = '>';
+		uart_debug[1] = column_val & 0xff;
+		uart_debug[2] = (column_val >> 8) & 0xff;
+		uart_debug[3] = '|';
+		uart_debug[4] = '\n';
+
+		usbuart_send_buf(usbd_dev, uart_debug, 5);
+
+		gpio_clear(rows[0].port, rows[0].pin);
 	}
 }
 
