@@ -8,6 +8,7 @@
         "cdc.h": "c",
         "usb_serial.h": "c",
         "cdcacm.h": "c",
-        "hid.h": "c"
+        "hid.h": "c",
+        "nvic.h": "c"
     }
 }
