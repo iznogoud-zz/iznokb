@@ -7,3 +7,5 @@
 *.map
 *.o
 *.srec
+bw-output/build-wrapper.log
+.scannerwork/.sonar_lock
